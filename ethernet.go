@@ -24,7 +24,7 @@ type EtherType uint16
 const (
     EtherTypeIPv4 EtherType = 0x0800
     EtherTypeARP EtherType = 0x0806
-    EtherTypeVLAN EtherType = 0x8011
+    EtherTypeVLAN EtherType = 0x8100
     EtherTypeIPv6 EtherType = 0x86DD
 )
 
