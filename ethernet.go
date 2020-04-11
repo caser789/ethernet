@@ -11,7 +11,7 @@ import (
 //go:generate stringer -output=string.go -type=EtherType
 
 var (
-	// Boradcast is a special MAC address which indicates a Frame should be
+	// Broadcast is a special MAC address which indicates a Frame should be
 	// sent to every device on a given LAN segment.
 	Broadcast = net.HardwareAddr{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 )
