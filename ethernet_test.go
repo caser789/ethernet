@@ -15,6 +15,15 @@ func TestFrameMarshalBinary(t *testing.T) {
 		b    []byte
 		err  error
 	}{
+        {
+            desc: "VLAN priority too large",
+            f: &Frame{
+                VLAN: []*VLAN{{
+                    Priority: 8,
+                }},
+            },
+            err: ErrInvalidVLAN,
+        },
 		{
 			desc: "VLAN ID too large",
 			f: &Frame{

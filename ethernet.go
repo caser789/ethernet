@@ -58,6 +58,7 @@ type Frame struct {
 // MarshalBinary allocates a byte slice and marshals a Frame into binary form.
 //
 // If one or more VLANs are set and their IDs are too large (greater than 4094),
+// or one or more VLANs' priority are too large (greater than 7),
 // ErrInvalidVLAN is returned
 func (f *Frame) MarshalBinary() ([]byte, error) {
 	// 6 bytes: destination MAC
