@@ -11,13 +11,13 @@ import (
 //go:generate stringer -output=string.go -type=EtherType
 
 const (
-    // minPayload is the minimum payload size for an Ethernet frame, assuming
-    // that no 802.1Q VLAN tags are present
-    minPayload = 46
+	// minPayload is the minimum payload size for an Ethernet frame, assuming
+	// that no 802.1Q VLAN tags are present
+	minPayload = 46
 )
 
 var (
-	// Broadcast is a special MAC address which indicates a Frame should be
+	// Broadcast is a special hardware address which indicates a Frame should be
 	// sent to every device on a given LAN segment.
 	Broadcast = net.HardwareAddr{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 )
@@ -35,18 +35,18 @@ const (
 )
 
 // A Frame is an IEEE 802.3 Ethernet II frame. A Frame contains information
-// such as source and destination MAC addresses, zero or more optional 802.1Q
+// such as source and destination hardware addresses, zero or more optional 802.1Q
 // VLAN tags, an EtherType, and payload data.
 type Frame struct {
-	// DestinationMAC specifies the destination MAC address for this Frame.
+	// DestinationHardwareAddr specifies the destination hardware address for this Frame.
 	// If this address is set to Broadcast, the Frame will be sent to every
 	// device on a given LAN segment.
-	DestinationMAC net.HardwareAddr
+	DestinationHardwareAddr net.HardwareAddr
 
-	// SourceMAC specifies the source MAC address for this Frame. Typically,
-	// this MAC address is the address of the network interface used to send
+	// SourceHardwareAddr specifies the source hardware address for this Frame. Typically,
+	// this hardware address is the address of the network interface used to send
 	// this Frame.
-	SourceMAC net.HardwareAddr
+	SourceHardwareAddr net.HardwareAddr
 
 	// Vlan specifies one or more optional 802.1Q VLAN tags, which many or may
 	// not be present in a Frame. If no VLAN tags are present, this length of
@@ -67,25 +67,25 @@ type Frame struct {
 // or one or more VLANs' priority are too large (greater than 7),
 // ErrInvalidVLAN is returned
 func (f *Frame) MarshalBinary() ([]byte, error) {
-	// 6 bytes: destination MAC
-	// 6 bytes: source MAC
+	// 6 bytes: destination hardware address
+	// 6 bytes: source hardware address
 	// N bytes: 4 * N VLAN tags
 	// 2 bytes: EtherType
 	// N bytes: payload length (may be padded)
 	//
 	// We let the operating system handle the checksum and the interpacket gap
 
-    // If payload is less than the required min length, we zero-pad up to
-    // the required min length
-    pl := len(f.Payload)
-    if pl < minPayload {
-        pl = minPayload
-    }
+	// If payload is less than the required min length, we zero-pad up to
+	// the required min length
+	pl := len(f.Payload)
+	if pl < minPayload {
+		pl = minPayload
+	}
 
 	b := make([]byte, 6+6+(4*len(f.VLAN))+2+pl)
 
-	copy(b[0:6], f.DestinationMAC)
-	copy(b[6:12], f.SourceMAC)
+	copy(b[0:6], f.DestinationHardwareAddr)
+	copy(b[6:12], f.SourceHardwareAddr)
 
 	// Marshal each VLAN tag into bytes, inserting a VLAN EtherType value
 	// before each, so device know that one or more VLANs are present.
@@ -119,18 +119,18 @@ func (f *Frame) MarshalBinary() ([]byte, error) {
 // If one or more VLANs are detected and their IDs are too large (greater than
 // 4094), ErrInvalidVLAN is returned
 func (f *Frame) UnmarshalBinary(b []byte) error {
-	// Verify that both MAC addresses and a single EtherType are present
+	// Verify that both hardware addresses and a single EtherType are present
 	if len(b) < 14 {
 		return io.ErrUnexpectedEOF
 	}
 
 	dst := make(net.HardwareAddr, 6)
 	copy(dst, b[0:6])
-	f.DestinationMAC = dst
+	f.DestinationHardwareAddr = dst
 
 	src := make(net.HardwareAddr, 6)
 	copy(src, b[6:12])
-	f.SourceMAC = src
+	f.SourceHardwareAddr = src
 
 	// Track offset in packet for writing data
 	n := 14
@@ -160,31 +160,31 @@ func (f *Frame) UnmarshalBinary(b []byte) error {
 
 	// Payload must be 46 bytes minimum, but the required number decreases
 	// to 42 if a VLAN tag is present.
-    //
-    // Special case: the OS will likely automatically remove VLAN
-    // tags before we get ahold of the traffic. If the packet length seems to
-    // indicate that a VLAN tag was present (42 bytes payload instead of 46
-    // bytes), but no VLAN tags were detected, we relax the minimum length
-    // restriction and act as if a VLAN tag was detected.
+	//
+	// Special case: the OS will likely automatically remove VLAN
+	// tags before we get ahold of the traffic. If the packet length seems to
+	// indicate that a VLAN tag was present (42 bytes payload instead of 46
+	// bytes), but no VLAN tags were detected, we relax the minimum length
+	// restriction and act as if a VLAN tag was detected.
 
-    // Check how many bytes under minimum the payload is
-    l := minPayload - len(b[n:])
+	// Check how many bytes under minimum the payload is
+	l := minPayload - len(b[n:])
 
-    // Check for number of VLANs detected, but only use 1 to reduce length
-    // requirement if more than 1 is present
-    vl := len(f.VLAN)
-    if vl > 1 {
-        vl = 1
-    }
+	// Check for number of VLANs detected, but only use 1 to reduce length
+	// requirement if more than 1 is present
+	vl := len(f.VLAN)
+	if vl > 1 {
+		vl = 1
+	}
 
-    // If no VLANs detected and exactly 4 bytes below requirement, a VLAN tag
-    // may have been stripped, so factor a single VLAN tag into the minimum length
-    // requirement
-    if vl == 0 && l == 4{
-        vl++
-    }
+	// If no VLANs detected and exactly 4 bytes below requirement, a VLAN tag
+	// may have been stripped, so factor a single VLAN tag into the minimum length
+	// requirement
+	if vl == 0 && l == 4 {
+		vl++
+	}
 
-    if len(b[n:]) < minPayload-(vl*4) {
+	if len(b[n:]) < minPayload-(vl*4) {
 		return io.ErrUnexpectedEOF
 	}
 

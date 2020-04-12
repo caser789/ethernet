@@ -19,10 +19,10 @@ const (
 )
 
 var (
-    // ErrInvalidVLAN is returned when a VLAN tag is invalid due to one of the
-    // following reasons:
-    //   - Priority of greater than 7 is detected
-    //   - ID of greater than 4094 (0xffe) is detected
+	// ErrInvalidVLAN is returned when a VLAN tag is invalid due to one of the
+	// following reasons:
+	//   - Priority of greater than 7 is detected
+	//   - ID of greater than 4094 (0xffe) is detected
 	ErrInvalidVLAN = errors.New("invalid VLAN")
 )
 
@@ -37,14 +37,14 @@ type Priority uint8
 // IEEE P802.1p recommended priority levels. Note that PriorityBackground has
 // a lower prirority than PriorityBestEffor
 const (
-    PriorityBackground                 Priority = 1
-    PriorityBestEffort                 Priority = 0
-    PriorityExcellentEffort            Priority = 2
-    PriorityCriticalApplications       Priority = 3
-    PriorityVideo                      Priority = 4
-    PriorityVoice                      Priority = 5
-    PriorityInternetworkControl        Priority = 6
-    PriorityNetworkControl             Priority = 7
+	PriorityBackground           Priority = 1
+	PriorityBestEffort           Priority = 0
+	PriorityExcellentEffort      Priority = 2
+	PriorityCriticalApplications Priority = 3
+	PriorityVideo                Priority = 4
+	PriorityVoice                Priority = 5
+	PriorityInternetworkControl  Priority = 6
+	PriorityNetworkControl       Priority = 7
 )
 
 // A VLAN is an IEEE 802.1Q Virtual LAN (VLAN) tag. A VLAN contains
@@ -71,10 +71,10 @@ type VLAN struct {
 // If a VLAN ID is too large (greater than 4094), ErrInvalidVLAN is returned.
 // If a VLAN priority is too large (greater than 7), ErrInvalidVLAN is returned.
 func (v *VLAN) MarshalBinary() ([]byte, error) {
-    // Check for VLAN priority in valid range
-    if v.Priority > PriorityNetworkControl {
-        return nil, ErrInvalidVLAN
-    }
+	// Check for VLAN priority in valid range
+	if v.Priority > PriorityNetworkControl {
+		return nil, ErrInvalidVLAN
+	}
 
 	// Check for VLAN ID in valid range
 	if v.ID >= VLANMax {
