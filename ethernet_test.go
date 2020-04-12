@@ -16,6 +16,15 @@ func TestFrameMarshalBinary(t *testing.T) {
 		err  error
 	}{
 		{
+			desc: "VLAN ID too large",
+			f: &Frame{
+				VLAN: []*VLAN{{
+					ID: VLANMax,
+				}},
+			},
+			err: ErrInvalidVLAN,
+		},
+		{
 			desc: "IPv4, no VLANs",
 			f: &Frame{
 				DestinationMAC: net.HardwareAddr{0, 1, 0, 1, 0, 1},
@@ -137,6 +146,16 @@ func TestFrameUnmarshalBinary(t *testing.T) {
 				0x00, 0x00,
 			}, bytes.Repeat([]byte{0}, 41)...),
 			err: io.ErrUnexpectedEOF,
+		},
+		{
+			desc: "VLAN ID too large",
+			b: []byte{
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0,
+				0x81, 0x00,
+				0xff, 0xff,
+			},
+			err: ErrInvalidVLAN,
 		},
 		{
 			desc: "short payload, 2 VLANs",

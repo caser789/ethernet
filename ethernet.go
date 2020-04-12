@@ -57,7 +57,8 @@ type Frame struct {
 
 // MarshalBinary allocates a byte slice and marshals a Frame into binary form.
 //
-// MarshalBinary never returns an error.
+// If one or more VLANs are set and their IDs are too large (greater than 4094),
+// ErrInvalidVLAN is returned
 func (f *Frame) MarshalBinary() ([]byte, error) {
 	// 6 bytes: destination MAC
 	// 6 bytes: source MAC
@@ -75,8 +76,10 @@ func (f *Frame) MarshalBinary() ([]byte, error) {
 	// before each, so device know that one or more VLANs are present.
 	n := 12
 	for _, v := range f.VLAN {
-		// vlan.MarshalBinary never returns an error.
-		vb, _ := v.MarshalBinary()
+		vb, err := v.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
 
 		// Add VLAN EtherType and VLAN bytes
 		binary.BigEndian.PutUint16(b[n:n+2], uint16(EtherTypeVLAN))
@@ -97,6 +100,9 @@ func (f *Frame) MarshalBinary() ([]byte, error) {
 //
 // If the byte slice does not contain enough data to unmarshal a valid Frame,
 // io.ErrUnexpectedEOF is returned.
+//
+// If one or more VLANs are detected and their IDs are too large (greater than
+// 4094), ErrInvalidVLAN is returned
 func (f *Frame) UnmarshalBinary(b []byte) error {
 	// Verify that both MAC addresses and a single EtherType are present
 	if len(b) < 14 {
@@ -123,10 +129,12 @@ func (f *Frame) UnmarshalBinary(b []byte) error {
 			return io.ErrUnexpectedEOF
 		}
 
-		// Body of VLAN tag is 2 bytes in length; will not return an error
-		// because of the above length chech
+		// Body of VLAN tag is 2 bytes in length;
 		vlan := new(VLAN)
-		_ = vlan.UnmarshalBinary(b[n : n+2])
+
+		if err := vlan.UnmarshalBinary(b[n : n+2]); err != nil {
+			return err
+		}
 		f.VLAN = append(f.VLAN, vlan)
 
 		// Parse next tag to determine if it is another VLAN, or if not,

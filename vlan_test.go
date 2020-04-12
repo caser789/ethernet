@@ -12,7 +12,15 @@ func TestVLANMarshalBinary(t *testing.T) {
 		desc string
 		v    *VLAN
 		b    []byte
+		err  error
 	}{
+		{
+			desc: "VLAN ID too large",
+			v: &VLAN{
+				ID: 4095,
+			},
+			err: ErrInvalidVLAN,
+		},
 		{
 			desc: "empty VLAN",
 			v:    &VLAN{},
@@ -39,7 +47,11 @@ func TestVLANMarshalBinary(t *testing.T) {
 	for i, tt := range tests {
 		b, err := tt.v.MarshalBinary()
 		if err != nil {
-			t.Fatal(err)
+			if want, got := tt.err, err; want != got {
+				t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
+					i, tt.desc, want, got)
+			}
+			continue
 		}
 
 		if want, got := tt.b, b; !bytes.Equal(want, got) {
@@ -80,6 +92,11 @@ func TestVLANUnmarshalBinary(t *testing.T) {
 				DropEligible: true,
 				ID:           100,
 			},
+		},
+		{
+			desc: "VLAN ID too large",
+			b:    []byte{0xff, 0xff},
+			err:  ErrInvalidVLAN,
 		},
 	}
 
