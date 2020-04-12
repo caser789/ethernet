@@ -179,6 +179,15 @@ func TestFrameUnmarshalBinary(t *testing.T) {
 			}, bytes.Repeat([]byte{0}, 37)...),
 			err: io.ErrUnexpectedEOF,
 		},
+        {
+            desc: "0 VLANs detected, but 1 may have been present",
+            b: bytes.Repeat([]byte{0}, 56),
+            f: &Frame{
+                DestinationMAC: net.HardwareAddr{0, 0, 0, 0, 0, 0},
+                SourceMAC: net.HardwareAddr{0, 0, 0, 0, 0, 0},
+                Payload: bytes.Repeat([]byte{0}, 42),
+            },
+        },
 		{
 			desc: "IPv4, no VLANs",
 			b: append([]byte{
