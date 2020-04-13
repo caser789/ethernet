@@ -98,19 +98,23 @@ func TestFrameMarshalBinary(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		b, err := tt.f.MarshalBinary()
-		if err != nil {
-			if want, got := tt.err, err; want != got {
-				t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
+		t.Run(tt.desc, func(t *testing.T) {
+			b, err := tt.f.MarshalBinary()
+			if err != nil {
+				if want, got := tt.err, err; want != got {
+					t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
+						i, tt.desc, want, got)
+				}
+
+				return
+			}
+
+			if want, got := tt.b, b; !bytes.Equal(want, got) {
+				t.Fatalf("[%02d] test %q, unexpeted Frame bytes:\n- want: %v\n- got: %v",
 					i, tt.desc, want, got)
 			}
-			continue
-		}
 
-		if want, got := tt.b, b; !bytes.Equal(want, got) {
-			t.Fatalf("[%02d] test %q, unexpeted Frame bytes:\n- want: %v\n- got: %v",
-				i, tt.desc, want, got)
-		}
+		})
 	}
 }
 
@@ -230,20 +234,22 @@ func TestFrameUnmarshalBinary(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		f := new(Frame)
-		if err := f.UnmarshalBinary(tt.b); err != nil {
-			if want, got := tt.err, err; want != got {
-				t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
-					i, tt.desc, want, got)
+		t.Run(tt.desc, func(t *testing.T) {
+			f := new(Frame)
+			if err := f.UnmarshalBinary(tt.b); err != nil {
+				if want, got := tt.err, err; want != got {
+					t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
+						i, tt.desc, want, got)
+				}
+
+				return
 			}
 
-			continue
-		}
-
-		if want, got := tt.f, f; !reflect.DeepEqual(want, got) {
-			t.Fatalf("[%02d] test %q, unexpected Frame:\n- want: %v\n- got: %v",
-				i, tt.desc, want, got)
-		}
+			if want, got := tt.f, f; !reflect.DeepEqual(want, got) {
+				t.Fatalf("[%02d] test %q, unexpected Frame:\n- want: %v\n- got: %v",
+					i, tt.desc, want, got)
+			}
+		})
 
 	}
 }
@@ -418,20 +424,22 @@ func TestFrameMarshalFCS(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		b, err := tt.f.MarshalFCS()
-		if err != nil {
-			if want, got := tt.err, err; want != got {
-				t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
-					i, tt.desc, want, got)
+		t.Run(tt.desc, func(t *testing.T) {
+			b, err := tt.f.MarshalFCS()
+			if err != nil {
+				if want, got := tt.err, err; want != got {
+					t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
+						i, tt.desc, want, got)
+				}
+
+				return
 			}
 
-			continue
-		}
-
-		if want, got := tt.b, b; !bytes.Equal(want, got) {
-			t.Fatalf("[%02d] test %q, unexpected Frame bytes:\n- want: %v\n- got: %v",
-				i, tt.desc, want, got)
-		}
+			if want, got := tt.b, b; !bytes.Equal(want, got) {
+				t.Fatalf("[%02d] test %q, unexpected Frame bytes:\n- want: %v\n- got: %v",
+					i, tt.desc, want, got)
+			}
+		})
 	}
 }
 
@@ -475,20 +483,22 @@ func TestFrameUnmarshalFCS(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		f := new(Frame)
-		if err := f.UnmarshalFCS(tt.b); err != nil {
-			if want, got := tt.err, err; want != got {
-				t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
-					i, tt.desc, want, got)
+		t.Run(tt.desc, func(t *testing.T) {
+			f := new(Frame)
+			if err := f.UnmarshalFCS(tt.b); err != nil {
+				if want, got := tt.err, err; want != got {
+					t.Fatalf("[%02d] test %q, unexpected error: %v != %v",
+						i, tt.desc, want, got)
+				}
+
+				return
 			}
 
-			continue
-		}
-
-		if want, got := tt.f, f; !reflect.DeepEqual(want, got) {
-			t.Fatalf("[%02d] test %q, unexpected Frame:\n- want: %v\n- got: %v",
-				i, tt.desc, want, got)
-		}
+			if want, got := tt.f, f; !reflect.DeepEqual(want, got) {
+				t.Fatalf("[%02d] test %q, unexpected Frame:\n- want: %v\n- got: %v",
+					i, tt.desc, want, got)
+			}
+		})
 	}
 }
 
