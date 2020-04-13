@@ -4,10 +4,10 @@ package ethernet
 
 import (
 	"encoding/binary"
-	"io"
-	"net"
 	"errors"
 	"hash/crc32"
+	"io"
+	"net"
 )
 
 //go:generate stringer -output=string.go -type=EtherType
@@ -23,9 +23,9 @@ var (
 	// sent to every device on a given LAN segment.
 	Broadcast = net.HardwareAddr{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 
-    // ErrInvalidFCS is returned when Frame.UnmarshalFCS detects an incorrect
-    // Ethernet frame check sequence in a byte slice for a Frame.
-    ErrInvalidFCS = errors.New("invalid frame check sequence")
+	// ErrInvalidFCS is returned when Frame.UnmarshalFCS detects an incorrect
+	// Ethernet frame check sequence in a byte slice for a Frame.
+	ErrInvalidFCS = errors.New("invalid frame check sequence")
 )
 
 // An EtherType is a value used to identify an upper layer protocol
@@ -73,23 +73,23 @@ type Frame struct {
 // or one or more VLANs' priority are too large (greater than 7),
 // ErrInvalidVLAN is returned
 func (f *Frame) MarshalBinary() ([]byte, error) {
-    b := make([]byte, f.length())
-    _, err := f.read(b)
-    return b, err
+	b := make([]byte, f.length())
+	_, err := f.read(b)
+	return b, err
 }
 
 // MarshalFCS allocates a byte slice, marshals a Frame into binary form, and
 // finally calculates and places a 4-byte IEEE CRC32 frame check sequence at
 // the end of the slice
 func (f *Frame) MarshalFCS() ([]byte, error) {
-    // Frame length with 4 extra bytes for frame check sequence
-    b := make([]byte, f.length()+4)
-    if _, err := f.read(b); err != nil {
-        return nil, err
+	// Frame length with 4 extra bytes for frame check sequence
+	b := make([]byte, f.length()+4)
+	if _, err := f.read(b); err != nil {
+		return nil, err
 	}
 
-    binary.BigEndian.PutUint32(b[len(b)-4:], crc32.ChecksumIEEE(b[0:len(b)-4]))
-    return b, nil
+	binary.BigEndian.PutUint32(b[len(b)-4:], crc32.ChecksumIEEE(b[0:len(b)-4]))
+	return b, nil
 }
 
 // read reads data from a Frame into b. read is used to marshal a Frame
@@ -118,7 +118,7 @@ func (f *Frame) read(b []byte) (int, error) {
 	binary.BigEndian.PutUint16(b[n:n+2], uint16(f.EtherType))
 	copy(b[n+2:], f.Payload)
 
-    return len(b), nil
+	return len(b), nil
 }
 
 // UnmarshalBinary unmarshals a byte slice into a Frame
@@ -160,20 +160,20 @@ func (f *Frame) UnmarshalBinary(b []byte) error {
 	}
 	f.EtherType = et
 
-    // Allocate single byte slice to store destination and source hardware
-    // addresses, and payload
-    bb := make([]byte, 6+6+len(b[n:]))
-    copy(bb[0:6], b[0:6])
-    f.Destination = bb[0:6]
-    copy(bb[6:12], b[6:12])
-    f.Source = bb[6:12]
+	// Allocate single byte slice to store destination and source hardware
+	// addresses, and payload
+	bb := make([]byte, 6+6+len(b[n:]))
+	copy(bb[0:6], b[0:6])
+	f.Destination = bb[0:6]
+	copy(bb[6:12], b[6:12])
+	f.Source = bb[6:12]
 
-    // There used to be a minimum length restriction here, but as
-    // long as two hardware addresses and an EtherType are present, it
-    // doesn't really matter what is contained in the payload. We will
-    // follow the "robustness principle".
-    copy(bb[12:], b[n:])
-    f.Payload = bb[12:]
+	// There used to be a minimum length restriction here, but as
+	// long as two hardware addresses and an EtherType are present, it
+	// doesn't really matter what is contained in the payload. We will
+	// follow the "robustness principle".
+	copy(bb[12:], b[n:])
+	f.Payload = bb[12:]
 
 	return nil
 }
@@ -182,25 +182,25 @@ func (f *Frame) UnmarshalBinary(b []byte) error {
 // verifies it against the checksum present in the byte slice, and finally,
 // unmarshals a byte slice into a Frame
 func (f *Frame) UnmarshalFCS(b []byte) error {
-    // Must contain enough data for FCS, to avoid panics
-    if len(b) < 4 {
-        return io.ErrUnexpectedEOF
-    }
+	// Must contain enough data for FCS, to avoid panics
+	if len(b) < 4 {
+		return io.ErrUnexpectedEOF
+	}
 
-    want := binary.BigEndian.Uint32(b[len(b)-4:])
-    got := crc32.ChecksumIEEE(b[0:len(b)-4])
-    if want != got {
-        return ErrInvalidFCS
-    }
+	want := binary.BigEndian.Uint32(b[len(b)-4:])
+	got := crc32.ChecksumIEEE(b[0 : len(b)-4])
+	if want != got {
+		return ErrInvalidFCS
+	}
 
-    return f.UnmarshalBinary(b[0:len(b)-4])
+	return f.UnmarshalBinary(b[0 : len(b)-4])
 }
 
 func (f *Frame) length() int {
-    pl := len(f.Payload)
-    if pl < minPayload {
-        pl = minPayload
-    }
+	pl := len(f.Payload)
+	if pl < minPayload {
+		pl = minPayload
+	}
 
-    return 6 + 6 + (4*len(f.VLAN)) + 2 + pl
+	return 6 + 6 + (4 * len(f.VLAN)) + 2 + pl
 }
