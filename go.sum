@@ -2,6 +2,8 @@ github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/caser789/raw v0.0.0-20200411135844-c7ab953a53a6 h1:WhRn6OFiaJY9wBci6SM+O1IEolB29cG6KFx9ryThxRI=
 github.com/caser789/raw v0.0.0-20200411135844-c7ab953a53a6/go.mod h1:eqE+KQe+Y78NEjoVQu5ldFLcmOwJ5l55EHu35ToIn4Y=
+github.com/caser789/raw v0.0.0-20200413104325-8609d7015f64 h1:eGljnbOFwYCKWas1Ye0MR5lIsMTtkTK6y4LgxpY4C/s=
+github.com/caser789/raw v0.0.0-20200413104325-8609d7015f64/go.mod h1:eqE+KQe+Y78NEjoVQu5ldFLcmOwJ5l55EHu35ToIn4Y=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
