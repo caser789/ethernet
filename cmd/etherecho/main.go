@@ -6,102 +6,102 @@
 package main
 
 import (
-    "flag"
-    "log"
-    "net"
-    "os"
-    "time"
+	"flag"
+	"log"
+	"net"
+	"os"
+	"time"
 
-    "github.com/caser789/ethernet"
-    "github.com/caser789/raw"
+	"github.com/caser789/ethernet"
+	"github.com/caser789/raw"
 )
 
 const etherType = 0xcccc
 
 func main() {
-    var (
-        ifaceFlag = flag.String("i", "", "network interface to use to send and receive messages.")
-        msgFlag = flag.String("m", "", "message to be sent (default: system's hostname")
-    )
+	var (
+		ifaceFlag = flag.String("i", "", "network interface to use to send and receive messages.")
+		msgFlag   = flag.String("m", "", "message to be sent (default: system's hostname")
+	)
 
-    flag.Parse()
+	flag.Parse()
 
-    // Open a raw socket on the specified interface, and configure it to accept
-    // traffic with etherecho's EtherType.
-    ifi, err := net.InterfaceByName(*ifaceFlag)
-    if err != nil {
-        log.Fatalf("failed to find interface %q: %v", *ifaceFlag, err)
-    }
+	// Open a raw socket on the specified interface, and configure it to accept
+	// traffic with etherecho's EtherType.
+	ifi, err := net.InterfaceByName(*ifaceFlag)
+	if err != nil {
+		log.Fatalf("failed to find interface %q: %v", *ifaceFlag, err)
+	}
 
-    c, err := raw.ListenPacket(ifi, etherType)
-    if err != nil {
-        log.Fatalf("failed to listen: %v", err)
-    }
+	c, err := raw.ListenPacket(ifi, etherType)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
-    // Default message to system's hostname if empty.
-    msg := *msgFlag
-    if msg == "" {
-        msg, err = os.Hostname()
-        if err != nil {
-            log.Fatalf("failed to retrieve hostname: %v", err)
-        }
-    }
+	// Default message to system's hostname if empty.
+	msg := *msgFlag
+	if msg == "" {
+		msg, err = os.Hostname()
+		if err != nil {
+			log.Fatalf("failed to retrieve hostname: %v", err)
+		}
+	}
 
-    // Send messages in one goroutine, receive messages in another.
-    go sendMessages(c, ifi.HardwareAddr, msg)
-    go receiveMessages(c, ifi.MTU)
+	// Send messages in one goroutine, receive messages in another.
+	go sendMessages(c, ifi.HardwareAddr, msg)
+	go receiveMessages(c, ifi.MTU)
 
-    // Block forever.
-    select {}
+	// Block forever.
+	select {}
 }
 
 // sendMessages continuously sends message over a connection at regular intervals.
 // sourced from specified harware address.
 func sendMessages(c net.PacketConn, source net.HardwareAddr, msg string) {
-    // Message is broadcast to all machines in same network segment
-    f := &ethernet.Frame{
-        Destination: ethernet.Broadcast,
-        Source: source,
-        EtherType: etherType,
-        Payload: []byte(msg),
-    }
+	// Message is broadcast to all machines in same network segment
+	f := &ethernet.Frame{
+		Destination: ethernet.Broadcast,
+		Source:      source,
+		EtherType:   etherType,
+		Payload:     []byte(msg),
+	}
 
-    b, err := f.MarshalBinary()
-    if err != nil {
-        log.Fatalf("failed to marshal ethernet frame: %v", err)
-    }
+	b, err := f.MarshalBinary()
+	if err != nil {
+		log.Fatalf("failed to marshal ethernet frame: %v", err)
+	}
 
-    // required by Linux, even though the Ethernet frame as a destination.
-    // Unused by BSD
-    addr := &raw.Addr{
-        HardwareAddr: ethernet.Broadcast,
-    }
+	// required by Linux, even though the Ethernet frame as a destination.
+	// Unused by BSD
+	addr := &raw.Addr{
+		HardwareAddr: ethernet.Broadcast,
+	}
 
-    // Send message forever
-    t := time.NewTicker(1 * time.Second)
-    for range t.C {
-        if _, err := c.WriteTo(b, addr); err != nil {
-            log.Fatalf("failed to send message: %v", err)
-        }
-    }
+	// Send message forever
+	t := time.NewTicker(1 * time.Second)
+	for range t.C {
+		if _, err := c.WriteTo(b, addr); err != nil {
+			log.Fatalf("failed to send message: %v", err)
+		}
+	}
 }
 
 // receiveMessages continuously receives messages over a connection. The messages
 // may be up to the interface's MTU size.
 func receiveMessages(c net.PacketConn, mtu int) {
-    var f ethernet.Frame
-    b := make([]byte, mtu)
+	var f ethernet.Frame
+	b := make([]byte, mtu)
 
-    for {
-        n, addr, err := c.ReadFrom(b)
-        if err != nil {
-            log.Fatalf("failed to receive message: %v", err)
-        }
+	for {
+		n, addr, err := c.ReadFrom(b)
+		if err != nil {
+			log.Fatalf("failed to receive message: %v", err)
+		}
 
-        if err :=(&f).UnmarshalBinary(b[:n]); err != nil {
-            log.Fatalf("failed to unmarshal ethernet frame: %v", err)
-        }
+		if err := (&f).UnmarshalBinary(b[:n]); err != nil {
+			log.Fatalf("failed to unmarshal ethernet frame: %v", err)
+		}
 
-        log.Printf("[%s] %s", addr.String(), string(f.Payload))
-    }
+		log.Printf("[%s] %s", addr.String(), string(f.Payload))
+	}
 }
