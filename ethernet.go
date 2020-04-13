@@ -73,23 +73,28 @@ type Frame struct {
 // or one or more VLANs' priority are too large (greater than 7),
 // ErrInvalidVLAN is returned
 func (f *Frame) MarshalBinary() ([]byte, error) {
-	// 6 bytes: destination hardware address
-	// 6 bytes: source hardware address
-	// N bytes: 4 * N VLAN tags
-	// 2 bytes: EtherType
-	// N bytes: payload length (may be padded)
-	//
-    // 4 bytes: checksum (allocated, but not added unless MarshalFCS is used)
+    b := make([]byte, f.length())
+    _, err := f.read(b)
+    return b, err
+}
 
-	// If payload is less than the required min length, we zero-pad up to
-	// the required min length
-	pl := len(f.Payload)
-	if pl < minPayload {
-		pl = minPayload
+// MarshalFCS allocates a byte slice, marshals a Frame into binary form, and
+// finally calculates and places a 4-byte IEEE CRC32 frame check sequence at
+// the end of the slice
+func (f *Frame) MarshalFCS() ([]byte, error) {
+    // Frame length with 4 extra bytes for frame check sequence
+    b := make([]byte, f.length()+4)
+    if _, err := f.read(b); err != nil {
+        return nil, err
 	}
 
-	b := make([]byte, 6+6+(4*len(f.VLAN))+2+pl+4)
+    binary.BigEndian.PutUint32(b[len(b)-4:], crc32.ChecksumIEEE(b[0:len(b)-4]))
+    return b, nil
+}
 
+// read reads data from a Frame into b. read is used to marshal a Frame
+// into a binary form, but does not allocate on its own
+func (f *Frame) read(b []byte) (int, error) {
 	copy(b[0:6], f.Destination)
 	copy(b[6:12], f.Source)
 
@@ -101,7 +106,7 @@ func (f *Frame) MarshalBinary() ([]byte, error) {
 		binary.BigEndian.PutUint16(b[n:n+2], uint16(EtherTypeVLAN))
 
 		if _, err := v.read(b[n+2 : n+4]); err != nil {
-			return nil, err
+			return 0, err
 		}
 
 		n += 4
@@ -113,31 +118,7 @@ func (f *Frame) MarshalBinary() ([]byte, error) {
 	binary.BigEndian.PutUint16(b[n:n+2], uint16(f.EtherType))
 	copy(b[n+2:], f.Payload)
 
-	return b, nil
-}
-
-// Marshal allocates a byte slice, marshals a Frame into binary form, and
-// finally calculates and places a 4-byte IEEE CRC32 frame check sequence at
-// the end of the slice
-//
-// Most users should use MarshalBinary instead. MarshalFCS is provided as a
-// convenience for rare occasions when the OS cannot automatically generate
-// a frame check sequence for an Ethernet frame.
-
-// If one or more VLANs are set and their priority values are too large
-// (greater than 7), or their IDs are too large (greater than 4094),
-// ErrInvalidVLAN is returned.
-func (f *Frame) MarshalFCS() ([]byte, error) {
-    // Marshal Frame with empty four byte sequence at the end
-    b, err := f.MarshalBinary()
-    if err != nil {
-        return nil, err
-    }
-
-    // Compute IEEE CRC32 checksum of frame bytes and place it directly
-    // in the last four bytes of the slice
-    binary.BigEndian.PutUint32(b[len(b)-4:], crc32.ChecksumIEEE(b[0:len(b)-4]))
-    return b, nil
+    return len(b), nil
 }
 
 // UnmarshalBinary unmarshals a byte slice into a Frame
@@ -213,4 +194,13 @@ func (f *Frame) UnmarshalFCS(b []byte) error {
     }
 
     return f.UnmarshalBinary(b[0:len(b)-4])
+}
+
+func (f *Frame) length() int {
+    pl := len(f.Payload)
+    if pl < minPayload {
+        pl = minPayload
+    }
+
+    return 6 + 6 + (4*len(f.VLAN)) + 2 + pl
 }
